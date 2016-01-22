@@ -1,0 +1,392 @@
+<?php
+
+/**
+ * @file
+ * Module for the XLMS Device entity
+
+ * TODO:
+ *  - create file upload for devices
+ *  - amend table structure in .install file to match what we actually need
+ *  - clean up/simplify views handling and theme
+ *
+ * DONE
+ *  - excise device types and (?) hard-code a single instance
+ *  - change menu/admin placement to configuration-> XLMS
+ */  
+
+
+/**
+ * Implement hook_entity_info().
+ *
+ * We define two entities here - the actual entity that will hold our domain
+ * specific information and an entity that holds information about the different
+ * types of entities. See here: http://drupal.org/node/977380 for a discussion on this
+ * choice.
+ */
+function xlms_device_entity_info() {
+  $return['xlms_device'] = array(
+    'label' => t('Device'),
+    // The entity class and controller class extend the classes provided by the
+    // Entity API
+    'entity class' => 'XlmsDevice',
+    'controller class' => 'XlmsDeviceController',
+    'base table' => 'xlms_device',
+    'fieldable' => TRUE,
+    'entity keys' => array(
+        'id' => 'did',
+    ),
+    'bundles' => array(
+      'xlms_device' => array(
+        'label' => t('Device'),
+        // TODO not including field/display settings for now.
+        //'admin' => array(
+          //'path' => 'admin/config/xlms/devices',
+          //'access arguments' => array('administer xlms devices'),                     
+        //),
+      ),
+    ),
+    // Bundle keys tell the FieldAPI how to extract information from the bundle objects
+    'label callback' => 'entity_class_label',
+    'uri callback' => 'entity_class_uri',
+    'creation callback' => 'xlms_device_create',
+    'access callback' => 'xlms_device_access',
+    'module' => 'xlms_device',
+    // The information below is used by the ModelUIController (which extends the EntityDefaultUIController)
+    'admin ui' => array(
+      'path' => 'admin/config/xlms/devices',
+      'file' => 'xlms_device.admin.inc',
+      'controller class' => 'XlmsDeviceUIController',
+      'menu wildcard' => '%xlms_device',
+    ),
+  );
+
+  return $return;
+}
+
+
+/**
+ * Implements hook_permission().
+ */
+function xlms_device_permission() {
+  $permissions = array(
+    'administer xlms devices' => array(
+      'title' => t('Administer devices'),
+      'description' => t('Edit and delete all devices'),
+    ),  
+  );
+  return $permissions;  
+}
+
+
+/**
+ * Determines whether the given user has access to a device.
+ *
+ * @param $op
+ *   The operation being performed. One of 'view', 'update', 'create', 'delete'
+ *   or just 'edit' (being the same as 'create' or 'update').
+ * @param $device
+ *   Optionally a device to check access for. If nothing is
+ *   given, access for all devices is determined.
+ * @param $account
+ *   The user to check for. Leave it to NULL to check for the global user.
+ * @return boolean
+ *   Whether access is allowed or not.
+ */
+function xlms_device_access($op, $device = NULL, $account = NULL) {
+  if (user_access('administer devices', $account)) {
+    return TRUE;
+  }
+
+  // TODO: Generate permissions by device??
+  return FALSE;
+}
+
+
+/**
+ * Fetch a device object. Make sure that the wildcard you choose 
+ * in the device entity definition fits the function name here.
+ *
+ * @param $did
+ *   Integer specifying the device id.
+ * @param $reset
+ *   A boolean indicating that the internal cache should be reset.
+ * @return
+ *   A fully-loaded $device object or FALSE if it cannot be loaded.
+ *
+ * @see xlms_device_load_multiple()
+ */
+function xlms_device_load($did, $reset = FALSE) {
+  $devices = xlms_device_load_multiple(array($did), array(), $reset);
+  return reset($devices);
+}
+
+
+/**
+ * Load multiple devices based on certain conditions.
+ *
+ * @param $dids
+ *   An array of device IDs.
+ * @param $conditions
+ *   An array of conditions to match against the {device} table.
+ * @param $reset
+ *   A boolean indicating that the internal cache should be reset.
+ * @return
+ *   An array of device objects, indexed by did.
+ *
+ * @see entity_load()
+ * @see xlms_device_load()
+ */
+function xlms_device_load_multiple($dids = array(), $conditions = array(), $reset = FALSE) {
+  return entity_load('xlms_device', $dids, $conditions, $reset);
+}
+
+/**
+ * Load all devices.
+ *
+ * This will probably not have many results.
+ *
+ */
+function xlms_device_load_all() {
+  return entity_load('xlms_device');
+}
+
+/**
+ * Load a device by name.
+ *
+ * @param $name
+ *   Name of the device to load.
+ * This will probably not have many results.
+ *
+ */
+function xlms_device_load_name($name = NULL) {
+  $devices = entity_load_multiple_by_name('xlms_device', isset($name) ? array($name) : FALSE);
+  return isset($name) ? reset($devices) : $devices;
+}
+
+/**
+ * Deletes a device.
+ */
+function xlms_device_delete(XlmsDevice $device) {
+  $device->delete();
+}
+
+
+/**
+ * Delete multiple devices.
+ *
+ * @param $dids
+ *   An array of device IDs.
+ */
+function xlms_device_delete_multiple(array $dids) {
+  entity_get_controller('xlms_device')->delete($dids);
+}
+
+
+/**
+ * Create a device object.
+ */
+function xlms_device_create($values = array()) {
+  return entity_get_controller('xlms_device')->create($values);
+}
+
+
+/**
+ * Saves a device to the database.
+ *
+ * @param $device
+ *   The device object.
+ */
+function xlms_device_save(XlmsDevice $device) {
+  return $device->save();
+}
+
+/**
+ * URI callback for device
+ */
+function xlms_device_uri(XlmsDevice $device){
+  return $device->defaultUri();
+}
+
+/**
+ * Menu title callback for showing individual entities
+ */
+function xlms_device_page_title(XlmsDevice $device){
+  return $device->name;
+}
+
+/**
+ * Sets up content to show an individual device
+ */
+function xlms_device_page_view($device, $view_mode = 'full') {    
+  $controller = entity_get_controller('xlms_device');  
+  $content = $controller->view(array($device->did => $device));
+  drupal_set_title($device->name);
+  return $content;
+}
+
+
+/**
+ * Implements hook_views_api().
+ */
+function xlms_device_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'xlms_device') . '/views',
+  );
+}
+
+
+/**
+ * Implement hook_theme().
+ */
+function xlms_device_theme() {
+  return array(
+    'xlms_device_add_list' => array(
+      'variables' => array('content' => array()),
+      'file' => 'xlms_device.admin.inc',
+    ),
+    'xlms_device' => array(
+      'render element' => 'elements',
+      'template' => 'xlms_device',
+    ),
+
+  );
+}  
+
+/**                                                                              
+ * Implements hook_menu().                                                       
+ */                                                                              
+function xlms_device_menu() {  
+  $items = array();
+
+  $items['admin/config/xlms/devices'] = array(
+    'title' => 'Devices',
+    'description' => 'Create, view, and manage XLMS devices.',
+    'page callback' => 'xlms_device_overview',
+    'access arguments' => array('administer xlms devices'),
+    'position' => 'left',
+    'weight' => 5,
+    'file' => 'xlms_device.admin.inc',
+  );
+  $items['admin/config/xlms/devices/list'] = array(
+    'title' => 'List',
+    'description' => 'Manage XLMS devices.',
+    'access arguments' => array('administer xlms devices'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+    'file' => 'xlms_device.admin.inc',
+  ); 
+  /*
+  $items['admin/config/xlms/devices/add'] = array(
+    'title' => 'Add a device',
+    'description' => 'Add a device.',
+    'page callback' => 'entity_form',
+    'page arguments' => array('xlms_device'),
+    'access arguments' => array('administer xlms devices'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+    'file' => 'xlms_device.admin.inc',
+  ); 
+  */
+
+  return $items;
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function xlms_device_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link 'admin/config/xlms/devices/add' on 'admin/structure/learners'.
+  if ($root_path == 'xlms/devices') {
+    $item = menu_get_item('xlms/devices/add');
+    if ($item['access']) {
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+}
+
+
+/**
+ * The class used for device entities
+ */
+class XlmsDevice extends Entity {
+  
+  public function __construct($values = array()) {
+    parent::__construct($values, 'xlms_device');
+  }
+
+  protected function defaultLabel() {
+    return $this->name;
+  }
+
+  function defaultUri() {
+    return array('path' => 'admin/config/xlms/devices/' . $this->did);
+  }
+
+  function setConfigurationFile($file) {
+    $this->configuration_file = $file->fid;
+  }
+
+  function configurationFile() {
+    if (isset($this->configuration_file)) {
+      if (!isset($this->configurationFile)) {
+        $this->configurationFile = file_load($this->configuration_file);
+      }
+      return $this->configurationFile;
+    }
+  }
+  
+}
+
+/**
+ * The Controller for XlmsDevice entities
+ */
+class XlmsDeviceController extends EntityAPIController {
+  public function __construct($entityType) {
+    parent::__construct($entityType);
+  }
+
+  /**
+   * Create a device - we first set up the values that are specific
+   * to our device schema but then also go through the EntityAPIController
+   * function.
+   * 
+   * @param $type
+   *   The machine-readable type of the device.
+   *
+   * @return
+   *   A device object with all default fields initialized.
+   */
+  public function create(array $values = array()) {
+    // Add values that are specific to our XlmsDevice
+    $values += array( 
+      'did' => '',
+      'is_new' => TRUE,
+      'title' => '',
+      'created' => '',
+      'changed' => '',
+      'data' => '',
+    );
+    
+    $device = parent::create($values);
+    return $device;
+  }
+  
+  /**
+   * Overriding the buldContent function to add entity specific fields
+   */
+  public function buildContent($entity, $view_mode = 'full', $langcode = NULL, $content = array()) {
+    $content = parent::buildContent($entity, $view_mode, $langcode, $content);
+    /*
+    $content['xlms_device_sample_data'] =  array(
+      '#markup' => theme('xlms_device_sample_data', array('xlms_device_sample_data' => check_plain($entity->data['sample_data']), 'xlms_device' => $entity)),
+    );
+    */
+
+    return $content;
+  }
+  
+}

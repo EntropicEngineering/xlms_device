@@ -1,0 +1,15 @@
+name = XLMS Device
+description = Provides trainer devices as entities.
+package = XLMS 
+core = 7.x
+
+dependencies[] = entity
+dependencies[] = views
+
+files[] = xlms_device.admin.inc
+files[] = xlms_device_type.admin.inc
+files[] = views/xlms_device.views.inc
+files[] = views/xlms_device_handler_link_field.inc
+files[] = views/xlms_device_handler_delete_link_field.inc
+files[] = views/xlms_device_handler_edit_link_field.inc
+files[] = views/xlms_device_handler_xlms_device_operations_field.inc
