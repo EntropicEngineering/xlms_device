@@ -5,13 +5,13 @@
  * Module for the XLMS Device entity
 
  * TODO:
- *  - create file upload for devices
- *  - amend table structure in .install file to match what we actually need
  *  - clean up/simplify views handling and theme
  *
  * DONE
  *  - excise device types and (?) hard-code a single instance
  *  - change menu/admin placement to configuration-> XLMS
+ *  - create file upload for devices
+ *  - amend table structure in .install file to match what we actually need
  */  
 
 
@@ -31,18 +31,17 @@ function xlms_device_entity_info() {
     'entity class' => 'XlmsDevice',
     'controller class' => 'XlmsDeviceController',
     'base table' => 'xlms_device',
-    'fieldable' => TRUE,
+    'fieldable' => FALSE,
     'entity keys' => array(
         'id' => 'did',
     ),
     'bundles' => array(
       'xlms_device' => array(
         'label' => t('Device'),
-        // TODO not including field/display settings for now.
-        //'admin' => array(
-          //'path' => 'admin/config/xlms/devices',
-          //'access arguments' => array('administer xlms devices'),                     
-        //),
+        'admin' => array(
+          'path' => 'admin/xlms/devices',
+          'access arguments' => array('administer xlms devices'),                     
+        ),
       ),
     ),
     // Bundle keys tell the FieldAPI how to extract information from the bundle objects
@@ -53,7 +52,7 @@ function xlms_device_entity_info() {
     'module' => 'xlms_device',
     // The information below is used by the ModelUIController (which extends the EntityDefaultUIController)
     'admin ui' => array(
-      'path' => 'admin/config/xlms/devices',
+      'path' => 'admin/xlms/devices',
       'file' => 'xlms_device.admin.inc',
       'controller class' => 'XlmsDeviceUIController',
       'menu wildcard' => '%xlms_device',
@@ -200,12 +199,6 @@ function xlms_device_save(XlmsDevice $device) {
   return $device->save();
 }
 
-/**
- * URI callback for device
- */
-function xlms_device_uri(XlmsDevice $device){
-  return $device->defaultUri();
-}
 
 /**
  * Menu title callback for showing individual entities
@@ -259,7 +252,7 @@ function xlms_device_theme() {
 function xlms_device_menu() {  
   $items = array();
 
-  $items['admin/config/xlms/devices'] = array(
+  $items['admin/xlms/devices'] = array(
     'title' => 'Devices',
     'description' => 'Create, view, and manage XLMS devices.',
     'page callback' => 'xlms_device_overview',
@@ -268,7 +261,7 @@ function xlms_device_menu() {
     'weight' => 5,
     'file' => 'xlms_device.admin.inc',
   );
-  $items['admin/config/xlms/devices/list'] = array(
+  $items['admin/xlms/devices/list'] = array(
     'title' => 'List',
     'description' => 'Manage XLMS devices.',
     'access arguments' => array('administer xlms devices'),
@@ -277,7 +270,7 @@ function xlms_device_menu() {
     'file' => 'xlms_device.admin.inc',
   ); 
   /*
-  $items['admin/config/xlms/devices/add'] = array(
+  $items['admin/xlms/devices/add'] = array(
     'title' => 'Add a device',
     'description' => 'Add a device.',
     'page callback' => 'entity_form',
@@ -296,7 +289,6 @@ function xlms_device_menu() {
  * Implements hook_menu_local_tasks_alter().
  */
 function xlms_device_menu_local_tasks_alter(&$data, $router_item, $root_path) {
-  // Add action link 'admin/config/xlms/devices/add' on 'admin/structure/learners'.
   if ($root_path == 'xlms/devices') {
     $item = menu_get_item('xlms/devices/add');
     if ($item['access']) {
@@ -322,8 +314,8 @@ class XlmsDevice extends Entity {
     return $this->name;
   }
 
-  function defaultUri() {
-    return array('path' => 'admin/config/xlms/devices/' . $this->did);
+  function uri() {
+    return array('path' => 'admin/xlms/devices/' . $this->did);
   }
 
   function setConfigurationFile($file) {

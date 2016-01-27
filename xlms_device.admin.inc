@@ -14,8 +14,9 @@ function xlms_device_overview() {
 
   $rows = array();
   foreach ($devices as $device) {
+    $uri = entity_uri('xlms_device', $device);
     $rows[] = array(
-      l($device->name, $device->defaultUri()['path']),
+      l($device->name, $uri['path'], $uri['options']),
     );
   }
   $empty = t('No devices configured.');
@@ -38,7 +39,7 @@ class XlmsDeviceUIController extends EntityDefaultUIController {
 }
 
 /**
- * Generates the device type editing form.
+ * Generates the device editing form.
  */
 function xlms_device_form($form, &$form_state, $xlms_device, $op = 'edit', $entity_type = NULL) {
   if ($op == 'clone') {
@@ -101,6 +102,6 @@ function xlms_device_form_submit(&$form, &$form_state) {
 
   file_usage_add($file, 'xlms_device', 'xlms_device', $device->did);  
 
-  $form_state['redirect'] = 'admin/config/xlms/devices';
+  $form_state['redirect'] = 'admin/xlms/devices';
 }
 
