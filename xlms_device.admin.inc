@@ -103,8 +103,7 @@ function xlms_device_form_submit(&$form, &$form_state) {
     $list = $archiver->listContents();
 
     // Drop everything into the temp directory.
-    $archiver->extract('temp://');
-
+    $archiver->extract('temporary://');
     $base_uri = 'public://devices/' . $form_state['values']['name'] .'/';
     $asset_uri = $base_uri . 'assets/';
     drupal_mkdir($asset_uri, NULL, TRUE);
@@ -120,7 +119,7 @@ function xlms_device_form_submit(&$form, &$form_state) {
       // Do not include dotfiles.
       if ($name[0] == '.') continue;
 
-      $data = file_get_contents('temp://' . $item);
+      $data = file_get_contents('temporary://' . $item);
 
       // Separate YAML file.
       $extension = strtolower(end(explode('.', $name)));

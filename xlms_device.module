@@ -333,14 +333,15 @@ class XlmsDevice extends Entity {
 
   function configuration($key = NULL) {
     if (!isset($this->configuration)) {
-      $this->configuration = json_decode(json_encode(yaml_parse_file(drupal_realpath($this->configurationFile()))));
+      $this->configurationFile();
+      $this->configuration = json_decode(json_encode(yaml_parse_file(drupal_realpath($this->configurationFile->uri))));
     }
     if ($key) {
-      if (isset($this->configuration[$key])) {
+      if (isset($this->configuration->$key)) {
         return $this->configuration->$key;
       }
     }
-    return $this->configuration
+    return $this->configuration;
   }
 
   function setInterfaceFile($file) {
