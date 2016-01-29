@@ -144,6 +144,14 @@ function xlms_device_form_submit(&$form, &$form_state) {
     }
   }
 
+  $interface = $device->configuration('interface');
+  foreach ($files as $item) {
+    if ($item->filename == $interface) {
+      $device->setInterfaceFile($item);
+      break;
+    }
+  }
+
   // Save device.
   $device->save();
 

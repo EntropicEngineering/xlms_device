@@ -330,6 +330,36 @@ class XlmsDevice extends Entity {
       return $this->configurationFile;
     }
   }
+
+  function configuration($key = NULL) {
+    if (!isset($this->configuration)) {
+      $this->configuration = json_decode(json_encode(yaml_parse_file(drupal_realpath($this->configurationFile()))));
+    }
+    if ($key) {
+      if (isset($this->configuration[$key])) {
+        return $this->configuration->$key;
+      }
+    }
+    return $this->configuration
+  }
+
+  function setInterfaceFile($file) {
+    $this->interface_file = $file->fid;
+  }
+
+  function interfaceFile() {
+    if (isset($this->interface_file)) {
+      if (!isset($this->interfaceFile)) {
+        $this->interfaceFile = file_load($this->interface_file);
+      }
+      return $this->interfaceFile;
+    }
+  }
+
+  function interfaceUri() {
+    $interface = $this->interfaceFile();
+    return file_create_url($interface->uri);
+  }
   
 }
 

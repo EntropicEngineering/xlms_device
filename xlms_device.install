@@ -42,6 +42,12 @@ function xlms_device_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'interface_file' => array(
+        'description' => 'File identifier for HTML interface.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
       'created' => array(
         'description' => 'The Unix timestamp when the device was created.',
         'type' => 'int',
