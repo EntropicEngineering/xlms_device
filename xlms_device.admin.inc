@@ -52,10 +52,10 @@ function xlms_device_form($form, &$form_state, $xlms_device, $op = 'edit', $enti
     '#title' => t('Configuration file'),
     '#type' => 'managed_file',
     '#required' => TRUE,
-    '#description' => t('A YAML file that defines this machine\'s configuration parameters and metrics.'),
+    '#description' => t('A zip file containing assets and/or A YAML file that defines this machine\'s configuration parameters and metrics.'),
     '#default_value' => $xlms_device->configurationFile()->fid,
     '#upload_location' => 'public://devices/',
-    "#upload_validators"  => array("file_validate_extensions" => array("yaml")),
+    "#upload_validators"  => array("file_validate_extensions" => array("zip", "yaml")),
   );
 
   $form['label'] = array(
@@ -95,12 +95,61 @@ function xlms_device_form_submit(&$form, &$form_state) {
   $file->status = FILE_STATUS_PERMANENT;
   file_save($file);
 
-  $device->setConfigurationFile($file);
+  if ($archiver = archiver_get_archiver($file->uri)) {
+
+    // Validate contents
+    $files = array();
+    $dirname = NULL;
+    $list = $archiver->listContents();
+
+    // Drop everything into the temp directory.
+    $archiver->extract('temp://');
+
+    $base_uri = 'public://devices/' . $form_state['values']['name'] .'/';
+    $asset_uri = $base_uri . 'assets/';
+    drupal_mkdir($asset_uri, NULL, TRUE);
+
+    foreach ($list as $item) {
+      if (!isset($dirname) && ($dir = dirname($item))) {
+        if ($dir != '.') {
+          $dirname = $dir;
+        }
+      }
+      $name = basename($item);
+
+      // Do not include dotfiles.
+      if ($name[0] == '.') continue;
+
+      $data = file_get_contents('temp://' . $item);
+
+      // Separate YAML file.
+      $extension = strtolower(end(explode('.', $name)));
+      if ($extension == 'yaml') {
+        $yaml = file_save_data($data, $base_uri . $name);
+        $device->setConfigurationFile($yaml);
+        $files[] = $yaml;
+      }
+      else {
+        $files[] = file_save_data($data, $asset_uri . $name);
+      }
+    }
+  }
+
+  // It's just a YAML file?
+  else {
+    $extension = strtolower(end(explode('.', $file->filename)));
+
+    if ($extension == 'yaml') {
+      $device->setConfigurationFile($file);
+    }
+  }
 
   // Save device.
   $device->save();
 
-  file_usage_add($file, 'xlms_device', 'xlms_device', $device->did);  
+  foreach ($files as $item) {
+    file_usage_add($item, 'xlms_device', 'xlms_device', $device->did);  
+  }
 
   $form_state['redirect'] = 'admin/xlms/devices';
 }
