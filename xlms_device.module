@@ -92,7 +92,7 @@ function xlms_device_permission() {
  *   Whether access is allowed or not.
  */
 function xlms_device_access($op, $device = NULL, $account = NULL) {
-  if (user_access('administer devices', $account)) {
+  if (user_access('administer xlms devices', $account)) {
     return TRUE;
   }
 
@@ -269,18 +269,13 @@ function xlms_device_menu() {
     'weight' => -10,
     'file' => 'xlms_device.admin.inc',
   ); 
-  /*
+/*
   $items['admin/xlms/devices/add'] = array(
     'title' => 'Add a device',
     'description' => 'Add a device.',
-    'page callback' => 'entity_form',
-    'page arguments' => array('xlms_device'),
     'access arguments' => array('administer xlms devices'),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 10,
-    'file' => 'xlms_device.admin.inc',
   ); 
-  */
+*/
 
   return $items;
 }
@@ -289,14 +284,16 @@ function xlms_device_menu() {
  * Implements hook_menu_local_tasks_alter().
  */
 function xlms_device_menu_local_tasks_alter(&$data, $router_item, $root_path) {
-  if ($root_path == 'xlms/devices') {
-    $item = menu_get_item('xlms/devices/add');
+  if ($root_path == 'admin/xlms/devices') {
+    $item = menu_get_item('admin/xlms/devices/add');
+/*
     if ($item['access']) {
       $data['actions']['output'][] = array(
         '#theme' => 'menu_local_action',
         '#link' => $item,
       );
     }
+*/
   }
 }
 
